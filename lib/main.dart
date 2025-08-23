@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 void main() => runApp(const DerbyPracticeApp());
 
@@ -43,8 +44,9 @@ class Drill {
   final Set<FocusArea> focuses;
   final ContactLevel contact;
   final Set<String> equipment;
+  bool favorited = false;
 
-  const Drill({
+  Drill({
     required this.id,
     required this.name,
     required this.description,
@@ -93,7 +95,7 @@ class PracticePlan {
 // --- Drill Catalog --- //
 
 class DrillRepo {
-  static const drills = <Drill>[
+  static List<Drill> drills = <Drill>[
     Drill(
       id: 'wu_dynamic',
       name: 'Dynamic Warm‑Up',
@@ -336,7 +338,14 @@ class _PlannerScreenState extends State<PlannerScreen> {
         },
       ),
       body: <Widget>[
-        Text("Screen Favorites"),
+        SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              _drillCatalogFavorited(),
+            ]
+          )
+        ),
         SafeArea(
           child: ListView(
             padding: const EdgeInsets.all(16),
@@ -395,7 +404,11 @@ class _PlannerScreenState extends State<PlannerScreen> {
             ],
           ),
         ),
-        Text("Screen Calendar"),
+        TableCalendar(
+          firstDay: DateTime.utc(2010, 10, 16),
+          lastDay: DateTime.utc(2030, 3, 14),
+          focusedDay: DateTime.now(),
+        ),
         Text("Screen Account"),
       ][currentIndex],
     );
@@ -560,33 +573,51 @@ class _PlannerScreenState extends State<PlannerScreen> {
     return _drillCatalogPreview(filtered);
   }
 
+  Widget _drillCatalogFavorited() {
+    // A filtered view of the catalog based on current filters
+    final filtered = DrillRepo.drills.where((d) {
+      return d.favorited;
+    }).toList();
+
+    return _drillCatalogPreview(filtered);
+  }
+
   Widget _drillCatalogPreview(List<Drill> drills) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Matching Drills', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
-        ...drills.map((d) => Card(
-              child: ListTile(
-                title: Text(d.name),
-                subtitle: Text(d.description, maxLines: 2, overflow: TextOverflow.ellipsis),
-                trailing: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(d.focuses.map((e) => e.label).join(', ')),
-                    Text('Contact: ${d.contact.label}')
-                  ],
-                ),
-                onTap: () => showModalBottomSheet(
-                  context: context,
-                  showDragHandle: true,
-                  builder: (_) => _drillBottomSheet(d),
-                ),
-              ),
-            )),
+        ...drills.map((d) => _drillCard(d)),
         const SizedBox(height: 100),
       ],
+    );
+  }
+
+  //Text(d.focuses.map((e) => e.label).join(', ')),
+  //Text('Contact: ${d.contact.label}')
+
+  Widget _drillCard(Drill d) {
+    return Card(
+      child: ListTile(
+        title: Text(d.name),
+        subtitle: Text(d.description, maxLines: 2, overflow: TextOverflow.ellipsis),
+        trailing: IconButton(
+          isSelected: d.favorited,
+          onPressed: () {
+            setState(() {
+              d.favorited = !d.favorited;
+            });
+          }, 
+          selectedIcon: const Icon(Icons.favorite),
+          icon: const Icon(Icons.favorite_border),
+        ),
+        onTap: () => showModalBottomSheet(
+          context: context,
+          showDragHandle: true,
+          builder: (_) => _drillBottomSheet(d),
+        ),
+      ),
     );
   }
 
