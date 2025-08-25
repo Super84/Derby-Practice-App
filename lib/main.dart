@@ -300,6 +300,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
   final Set<FocusArea> selectedFocus = {FocusArea.agility, FocusArea.packwork};
   ContactLevel maxContact = ContactLevel.full;
   final Set<String> equipment = {'cones', 'whistle'};
+  DateTime calendarSelectedDay = DateTime.now();
+  DateTime calendarFocusedDay = DateTime.now();
+  CalendarFormat calendarFormat = CalendarFormat.month;
 
   PracticePlan? plan;
 
@@ -404,14 +407,40 @@ class _PlannerScreenState extends State<PlannerScreen> {
             ],
           ),
         ),
-        TableCalendar(
-          firstDay: DateTime.utc(2010, 10, 16),
-          lastDay: DateTime.utc(2030, 3, 14),
-          focusedDay: DateTime.now(),
-        ),
+        _calendarView(),
         Text("Screen Account"),
       ][currentIndex],
     );
+  }
+
+  Widget _calendarView() {
+    return TableCalendar(
+          firstDay: DateTime.utc(2000, 1, 1),
+          lastDay: DateTime.utc(2099, 12, 31),
+          focusedDay: calendarFocusedDay,
+          calendarFormat: calendarFormat,
+          selectedDayPredicate: (day) {
+            return isSameDay(day, calendarSelectedDay);
+          },
+          onDaySelected: (selectedDay, focusedDay) {
+            if(!isSameDay(selectedDay, calendarSelectedDay)) {
+              setState(() {
+                calendarSelectedDay = selectedDay;
+                calendarFocusedDay = focusedDay;
+              });
+            }
+          },
+          onFormatChanged: (format) {
+            if(calendarFormat != format) {
+              setState(() {
+                calendarFormat = format;
+              });
+            }
+          },
+          onPageChanged: (focusedDay) {
+            calendarFocusedDay = focusedDay;
+          },
+        );
   }
 
   Widget _numberField(String label, int value, ValueChanged<int> onChanged) {
